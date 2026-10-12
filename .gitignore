@@ -43,3 +43,6 @@ next-env.d.ts
 # stray screenshots (not part of the project)
 /Screenshot*.png
 /components-map-screenshot.png
+
+# the example file has no secrets and SHOULD be committed
+!.env.example
