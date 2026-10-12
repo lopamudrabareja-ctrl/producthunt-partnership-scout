@@ -23,3 +23,8 @@ export const WEIGHTS = { votes: 0.6, makerReplies: 0.4, freshness: 0.05 } as con
 export const URGENT_FROM_DAY = 5;
 
 export const AI_TOP_N = 10; // only the top 10 get Gemini drafts (cheaper, faster, fewer rate-limit problems)
+
+// "Rising" = gained at least this many upvotes AND at least this share of what it had before, since the previous run.
+// (Both, so a 500-upvote product gaining 10 is not "rising", but a 15-upvote product gaining 10 is.)
+export const RISING_MIN_DELTA = 10;
+export const RISING_MIN_SHARE = 0.05;

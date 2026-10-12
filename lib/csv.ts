@@ -1,4 +1,5 @@
 // CSV export for Kavya's outreach list. Pure functions, unit tested.
+import { reachLinks } from "./links";
 import type { ResultRow } from "./types";
 
 // Spreadsheet apps run cells starting with = + - @ as formulas. Founder names and taglines come from the
@@ -11,7 +12,7 @@ export function csvCell(value: unknown): string {
 
 export const CSV_HEADER = [
   "Rank", "Product", "Founder", "One-line description", "Upvotes", "Maker replies",
-  "Days since launch", "Urgent", "Outreach angle", "Message", "ProductHunt link", "Status",
+  "Days since launch", "Urgent", "New to list", "Upvote change", "Outreach angle", "Message", "ProductHunt link", "LinkedIn search", "Status",
 ];
 
 // `messages` holds any edits Kavya made in the UI, so the export matches what she will actually send.
@@ -26,9 +27,12 @@ export function toCsv(rows: ResultRow[], messages: Record<string, string> = {}):
       r.makerReplies,
       r.daysSinceLaunch,
       r.urgent ? "Yes" : "No",
+      r.trend?.isNew ? "Yes" : "No",
+      r.trend?.votesDelta ?? "",
       r.ai?.angle ?? "",
       messages[r.id] ?? r.ai?.message ?? "",
       r.productHuntUrl,
+      reachLinks(r).linkedin,
       r.status,
     ].map(csvCell).join(",")
   );

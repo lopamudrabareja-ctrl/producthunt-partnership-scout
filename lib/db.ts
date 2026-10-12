@@ -5,11 +5,12 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Draft } from "./gemini";
 import type { RankedProduct } from "./pipeline";
 import { STATUSES, type Status } from "./status";
+import type { Trend } from "./trend";
 
 export { STATUSES };
 export type { Status };
 
-export type ScoutRow = RankedProduct & { ai: Draft | null }; // a ranked product plus its Gemini draft
+export type ScoutRow = RankedProduct & { ai: Draft | null; trend?: Trend | null }; // ranked product + Gemini draft + what changed since the previous run
 
 export const CACHE_TTL_MS = 10 * 60 * 1000; // a run younger than 10 minutes is reused
 

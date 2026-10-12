@@ -7,6 +7,7 @@ import { ALL_CATEGORY_IDS, CATEGORIES, MAX_RESULTS, type CategoryId } from "@/li
 import { cacheKey, dbConfigured, getLatestRun, getStatuses, isFresh, saveRun, type ScoutRow } from "@/lib/db";
 import { AI_TOP_N, generateDrafts, type Draft } from "@/lib/gemini";
 import { buildRankedList, type RawPost } from "@/lib/pipeline";
+import { computeTrends } from "@/lib/trend";
 import { fetchTopic } from "@/lib/producthunt";
 
 // Allow up to 90s: ProductHunt (~2s) + Gemini (up to 30s per model, two models tried).
@@ -93,7 +94,13 @@ export async function GET(request: NextRequest) {
       warnings.push(`AI drafts unavailable: ${e instanceof Error ? e.message : "unknown error"}`);
     }
   }
-  const rows: ScoutRow[] = ranked.map((r) => ({ ...r, ai: drafts.get(r.id) ?? null }));
+  // What changed since the previous saved run (new to the list / gained upvotes). Stored with the run, so cache hits keep it.
+  const trends = computeTrends(
+    ranked.map((r) => ({ id: r.id, votes: r.votes })),
+    latest?.results.map((r) => ({ id: r.id, votes: r.votes })),
+    latest?.createdAt
+  );
+  const rows: ScoutRow[] = ranked.map((r) => ({ ...r, ai: drafts.get(r.id) ?? null, trend: trends.get(r.id) ?? null }));
 
   // 5. Save only a complete run (Gemini succeeded), so a cached result never hides the AI text.
   if (aiStatus === "ok" && dbConfigured()) {

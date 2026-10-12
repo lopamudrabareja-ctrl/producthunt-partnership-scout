@@ -3,6 +3,8 @@
 // (status + review the message). Replaces the old 7-column table row.
 import { useState } from "react";
 import { AI_TOP_N, CATEGORIES, type CategoryId } from "@/lib/config";
+import { timeAgo } from "@/lib/format";
+import { reachLinks } from "@/lib/links";
 import { STATUSES, type Status } from "@/lib/status";
 import type { ResultRow } from "@/lib/types";
 import LaunchWindow from "./LaunchWindow";
@@ -84,6 +86,22 @@ export default function ProductCard({ row, index, message, onMessageChange, onSt
                   Top pick
                 </span>
               )}
+              {row.trend?.isNew && (
+                <span
+                  title="Not on your list the last time you searched"
+                  className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white"
+                >
+                  New
+                </span>
+              )}
+              {row.trend?.rising && (
+                <span
+                  title="Gained a lot of upvotes since your last search"
+                  className="rounded-full bg-ok-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ok"
+                >
+                  ↑ Rising
+                </span>
+              )}
             </div>
             <p className="mt-1 max-w-prose text-[15px] leading-relaxed text-muted">{row.ai?.oneLiner ?? row.tagline}</p>
             {categories.length > 0 && <p className="mt-2 text-xs text-muted">{categories.join(" · ")}</p>}
@@ -100,6 +118,11 @@ export default function ProductCard({ row, index, message, onMessageChange, onSt
             {row.votes}
             <span className="font-normal text-muted">upvotes</span>
           </span>
+          {row.trend && row.trend.votesDelta !== null && row.trend.votesDelta > 0 && (
+            <span className="text-xs font-medium text-ok" title="Upvotes gained since your previous search">
+              +{row.trend.votesDelta} since {timeAgo(row.trend.since, new Date())}
+            </span>
+          )}
           <span className="flex items-center gap-1.5 font-semibold" title="Replies from the makers">
             <Chat />
             {row.makerReplies}
@@ -130,15 +153,28 @@ export default function ProductCard({ row, index, message, onMessageChange, onSt
                 ?
               </span>
               <span className="text-muted">
-                Founder not public ·{" "}
-                <a href={row.productHuntUrl} target="_blank" rel="noreferrer" className="font-medium text-accent hover:underline">
-                  see ProductHunt page
-                </a>
+                Founder not public on ProductHunt
               </span>
             </>
           )}
         </div>
       </div>
+
+      {/* Reach-out links: searches (never claims), most useful when the founder's name is hidden */}
+      <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
+        <span>{row.founder ? "Find them:" : "Founder hidden. Find them:"}</span>
+        {(() => {
+          const l = reachLinks(row);
+          const a = "font-medium text-accent hover:underline";
+          return (
+            <>
+              <a href={l.linkedin} target="_blank" rel="noreferrer noopener" className={a}>LinkedIn search</a>
+              <a href={l.x} target="_blank" rel="noreferrer noopener" className={a}>X search</a>
+              {l.site && <a href={l.site} target="_blank" rel="noreferrer noopener" className={a}>Product site</a>}
+            </>
+          );
+        })()}
+      </p>
 
       {/* The partnership angle */}
       <div className="mt-4 rounded-2xl bg-wash px-4 py-3">

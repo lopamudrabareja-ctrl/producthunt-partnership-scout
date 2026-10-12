@@ -21,6 +21,7 @@ export default function Scout() {
   const [error, setError] = useState("");
   const [seconds, setSeconds] = useState(0);
   const [urgentOnly, setUrgentOnly] = useState(false);
+  const [changedOnly, setChangedOnly] = useState(false);
   const [messages, setMessages] = useState<Record<string, string>>({}); // Kavya's edits, keyed by product id
   const [notice, setNotice] = useState("");
   const [view, setView] = useState<View>("scout");
@@ -107,9 +108,11 @@ export default function Scout() {
   }
 
   const rows: Row[] = useMemo(() => {
-    const all = data?.results ?? [];
-    return urgentOnly ? all.filter((r) => r.urgent) : all;
-  }, [data, urgentOnly]);
+    let list = data?.results ?? [];
+    if (urgentOnly) list = list.filter((r) => r.urgent);
+    if (changedOnly) list = list.filter((r) => r.trend?.isNew || r.trend?.rising);
+    return list;
+  }, [data, urgentOnly, changedOnly]);
 
   function downloadCsv() {
     // The BOM (﻿) makes Excel read the file as UTF-8 so names with accents are not garbled.
@@ -128,6 +131,9 @@ export default function Scout() {
   const all = data?.results ?? [];
   const urgentCount = all.filter((r) => r.urgent).length;
   const namedCount = all.filter((r) => r.founder).length;
+  const newCount = all.filter((r) => r.trend?.isNew).length;
+  const risingCount = all.filter((r) => r.trend?.rising).length;
+  const hasBaseline = all.some((r) => r.trend);
   const contactedCount = all.filter((r) => r.status === "contacted" || r.status === "replied").length;
   const otherWarnings = (data?.warnings ?? []).filter(
     (w) => !w.startsWith("AI drafts unavailable") && !w.startsWith("ProductHunt is unreachable")
@@ -279,6 +285,10 @@ export default function Scout() {
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-muted">
                 {data.source === "live" ? "Fetched just now" : `Saved result from ${timeAgo(data.generatedAt, new Date())}`}
+                {" · "}
+                {hasBaseline
+                  ? `${newCount} new, ${risingCount} rising since your last search`
+                  : "search again later to see what is new or rising"}
                 {data.source !== "stale" && (
                   <>
                     {" · "}
@@ -289,6 +299,17 @@ export default function Scout() {
                 )}
               </p>
               <div className="flex items-center gap-3">
+                {view === "scout" && (
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={changedOnly}
+                      onChange={(e) => setChangedOnly(e.target.checked)}
+                      className="h-4 w-4 accent-[var(--color-accent)]"
+                    />
+                    New &amp; rising only
+                  </label>
+                )}
                 {view === "scout" && (
                   <label className="flex cursor-pointer items-center gap-2 text-sm">
                     <input
@@ -321,8 +342,12 @@ export default function Scout() {
                 </div>
               ) : rows.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-line px-6 py-12 text-center">
-                  <p className="font-semibold">Nothing is closing soon</p>
-                  <p className="mt-1 text-sm text-muted">No launch in this list is on day 5 or later. Untick &quot;Closing soon only&quot; to see all of them.</p>
+                  <p className="font-semibold">{changedOnly ? "Nothing new or rising yet" : "Nothing is closing soon"}</p>
+                  <p className="mt-1 text-sm text-muted">
+                    {changedOnly
+                      ? "No launch is new to your list or gaining upvotes fast since your last search. Untick the filter to see everything."
+                      : "No launch in this list is on day 5 or later. Untick \"Closing soon only\" to see all of them."}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">

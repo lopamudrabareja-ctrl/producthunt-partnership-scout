@@ -52,6 +52,18 @@ describe("toCsv", () => {
   });
 });
 
+describe("toCsv trend and reach-out columns", () => {
+  it("includes the new flag, the upvote change and a LinkedIn search link", () => {
+    const withTrend = row({ trend: { isNew: false, votesDelta: 52, rising: true, since: "2026-10-12T03:00:00Z" } });
+    const line = toCsv([withTrend]).split("\r\n")[1];
+    expect(line).toContain(",No,52,");
+    expect(line).toContain("linkedin.com/search");
+  });
+  it("leaves the change blank when there is no earlier run", () => {
+    expect(toCsv([row({ trend: null })]).split("\r\n")[1]).toContain(",No,,");
+  });
+});
+
 describe("timeAgo", () => {
   const now = new Date("2026-10-12T12:00:00Z");
   const ago = (s: number) => new Date(now.getTime() - s * 1000).toISOString();
