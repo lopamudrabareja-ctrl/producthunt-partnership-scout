@@ -4,7 +4,7 @@ _Done 12 Oct 2026 from public sources (job postings, vendor guides, product page
 
 ## 1. What the exam asks for (so research stays on target)
 - **Medium** is judged on: scoping the problem correctly, reliable outputs, edge cases, and showing that it works. More features do not earn marks by themselves.
-- Build marks: Components Map 10, Vercel link 10, Design 10, Backend logic and build quality 25, **Demo video 5**.
+- Build marks: Components Map 10, Vercel link 10, Design 10, Backend logic and build quality 25, Demo video 5 (the professor has since said the demo video is not required).
 - The brief says Kavya "still misses things": launches that arrived after she checked, and products that **gained traction later in the day**. It also wants maker comments used as a "responsiveness" signal, and the output on demand.
 - Nothing in the rubric or the brief mentions a scheduled job or cron.
 
