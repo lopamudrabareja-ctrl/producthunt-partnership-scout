@@ -63,7 +63,7 @@ export default function ProductCard({ row, index, message, onMessageChange, onSt
 
   return (
     <article
-      className={`rise rounded-2xl border bg-surface p-5 shadow-[0_1px_2px_rgba(24,24,27,0.04)] transition-shadow hover:shadow-[0_6px_24px_-12px_rgba(24,24,27,0.18)] sm:p-6 ${
+      className={`rise rounded-3xl border bg-surface p-5 shadow-[0_1px_2px_rgba(29,42,35,0.04)] transition-shadow hover:shadow-[0_8px_28px_-14px_rgba(29,42,35,0.22)] sm:p-6 ${
         row.urgent ? "border-urgent-line" : "border-line"
       } ${skipped ? "opacity-60" : ""}`}
       style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
@@ -141,7 +141,7 @@ export default function ProductCard({ row, index, message, onMessageChange, onSt
       </div>
 
       {/* The partnership angle */}
-      <div className="mt-4 rounded-xl bg-wash px-4 py-3">
+      <div className="mt-4 rounded-2xl bg-wash px-4 py-3">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Partnership angle</p>
         {row.ai ? (
           <p className="mt-1 text-[15px] leading-relaxed">{row.ai.angle}</p>
@@ -158,7 +158,7 @@ export default function ProductCard({ row, index, message, onMessageChange, onSt
           <label htmlFor={`status-${row.id}`} className="text-sm text-muted">
             Status
           </label>
-          <span className={`inline-flex items-center gap-2 rounded-lg border px-2.5 ${st.box}`}>
+          <span className={`inline-flex items-center gap-2 rounded-full border px-3 ${st.box}`}>
             <span className={`h-2 w-2 rounded-full ${st.dot}`} aria-hidden />
             <select
               id={`status-${row.id}`}
@@ -181,7 +181,7 @@ export default function ProductCard({ row, index, message, onMessageChange, onSt
             onClick={() => setOpen((o) => !o)}
             aria-expanded={open}
             aria-controls={`panel-${row.id}`}
-            className="h-10 rounded-lg bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accent-strong"
+            className="h-10 rounded-full bg-accent px-5 text-sm font-semibold text-white transition-colors hover:bg-accent-strong"
           >
             {open ? "Hide message" : "Review message"}
           </button>
@@ -199,13 +199,13 @@ export default function ProductCard({ row, index, message, onMessageChange, onSt
             value={message}
             onChange={(e) => onMessageChange(row.id, e.target.value)}
             rows={9}
-            className="mt-2 w-full resize-y rounded-xl border border-line bg-surface p-4 text-[15px] leading-relaxed focus:border-accent"
+            className="mt-2 w-full resize-y rounded-2xl border border-line bg-surface p-4 text-[15px] leading-relaxed focus:border-accent"
           />
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={copy}
-              className="h-10 rounded-lg border border-accent bg-surface px-4 text-sm font-semibold text-accent-strong transition-colors hover:bg-accent-soft"
+              className="h-10 rounded-full border border-accent bg-surface px-5 text-sm font-semibold text-accent-strong transition-colors hover:bg-accent-soft"
             >
               {copied ? "Copied" : "Copy message"}
             </button>

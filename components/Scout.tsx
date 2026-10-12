@@ -6,7 +6,11 @@ import { toCsv } from "@/lib/csv";
 import type { Status } from "@/lib/status";
 import { timeAgo } from "@/lib/format";
 import type { ResultRow as Row, ScoutResponse } from "@/lib/types";
+import AppNav, { type View } from "./AppNav";
+import { IconCalendar } from "./Icons";
+import PipelineBoard from "./PipelineBoard";
 import ProductCard from "./ProductCard";
+import StatCards from "./StatCards";
 
 type Phase = "idle" | "loading" | "done" | "error";
 
@@ -19,6 +23,7 @@ export default function Scout() {
   const [urgentOnly, setUrgentOnly] = useState(false);
   const [messages, setMessages] = useState<Record<string, string>>({}); // Kavya's edits, keyed by product id
   const [notice, setNotice] = useState("");
+  const [view, setView] = useState<View>("scout");
   const abortRef = useRef<AbortController | null>(null);
 
   // Elapsed-seconds counter while loading, so a 20 second wait never looks frozen.
@@ -123,34 +128,37 @@ export default function Scout() {
   const all = data?.results ?? [];
   const urgentCount = all.filter((r) => r.urgent).length;
   const namedCount = all.filter((r) => r.founder).length;
+  const contactedCount = all.filter((r) => r.status === "contacted" || r.status === "replied").length;
   const otherWarnings = (data?.warnings ?? []).filter(
     (w) => !w.startsWith("AI drafts unavailable") && !w.startsWith("ProductHunt is unreachable")
   );
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      {/* Top bar */}
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-sm font-bold text-white" aria-hidden>
-              PS
-            </span>
-            <span className="font-semibold tracking-tight">Partnership Scout</span>
-          </div>
-          <span className="hidden text-sm text-muted sm:block">Live ProductHunt data · last 7 days</span>
-        </div>
-      </header>
+    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-6 sm:py-6">
+      <AppNav view={view} onChange={setView} />
 
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">ProductHunt Partnership Scout</h1>
-        <p className="mt-3 max-w-2xl text-[17px] leading-relaxed text-muted">
-          New tools from the last 7 days, ranked by upvotes and maker replies, each with a draft message. You review,
-          edit and send. Nothing is ever sent for you.
-        </p>
+      <main className="mt-8">
+        {/* Greeting */}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-accent">ProductHunt Partnership Scout</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
+              {view === "scout" ? "Welcome back, Kavya" : "Your outreach pipeline"}
+            </h1>
+            <p className="mt-2 max-w-2xl text-[17px] leading-relaxed text-muted">
+              {view === "scout"
+                ? "New tools from the last 7 days, ranked by upvotes and maker replies, each with a draft message. You review, edit and send. Nothing is ever sent for you."
+                : "Every launch by stage. Change a stage from the dropdown on a card and it is saved, so it is still here tomorrow."}
+            </p>
+          </div>
+          <span className="flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-sm text-muted">
+            <IconCalendar />
+            Last 7 days · live data
+          </span>
+        </div>
 
         {/* Controls */}
-        <section aria-label="Choose categories" className="mt-8 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+        <section aria-label="Choose categories" className="mt-7 rounded-3xl border border-line bg-surface p-5 sm:p-6">
           <p className="text-sm font-medium">Categories to search</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {ALL_CATEGORY_IDS.map((id) => {
@@ -185,7 +193,7 @@ export default function Scout() {
               type="button"
               onClick={() => run(false)}
               disabled={phase === "loading" || selected.length === 0}
-              className="h-11 rounded-xl bg-accent px-6 text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-11 rounded-full bg-accent px-7 text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50"
             >
               {phase === "loading" ? "Searching…" : "Find partners"}
             </button>
@@ -193,10 +201,9 @@ export default function Scout() {
           </div>
         </section>
 
-        {/* Loading: skeleton cards, so the layout is already there while Gemini writes */}
         {phase === "loading" && (
           <section aria-label="Loading results" className="mt-8">
-            <div role="status" className="mb-4 flex items-center gap-3 rounded-xl border border-accent/20 bg-accent-soft px-4 py-3">
+            <div role="status" className="mb-4 flex items-center gap-3 rounded-2xl border border-accent/20 bg-accent-soft px-4 py-3">
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" aria-hidden />
               <p className="text-sm font-medium text-accent-strong">
                 {loadingStep}… {seconds}s
@@ -205,12 +212,12 @@ export default function Scout() {
             </div>
             <div className="space-y-4" aria-hidden>
               {[0, 1, 2].map((i) => (
-                <div key={i} className="animate-pulse rounded-2xl border border-line bg-surface p-6">
+                <div key={i} className="animate-pulse rounded-3xl border border-line bg-surface p-6">
                   <div className="h-5 w-1/3 rounded bg-wash" />
                   <div className="mt-3 h-4 w-2/3 rounded bg-wash" />
                   <div className="mt-6 h-px bg-line" />
                   <div className="mt-4 h-4 w-1/2 rounded bg-wash" />
-                  <div className="mt-4 h-16 rounded-xl bg-wash" />
+                  <div className="mt-4 h-16 rounded-2xl bg-wash" />
                 </div>
               ))}
             </div>
@@ -218,13 +225,13 @@ export default function Scout() {
         )}
 
         {phase === "error" && (
-          <div role="alert" className="mt-8 rounded-2xl border border-danger/30 bg-danger-soft p-5">
+          <div role="alert" className="mt-8 rounded-3xl border border-danger/30 bg-danger-soft p-5">
             <p className="font-semibold text-danger">Could not load launches</p>
             <p className="mt-1 text-sm text-danger/90">{error}</p>
             <button
               type="button"
               onClick={() => run(false)}
-              className="mt-3 h-10 rounded-lg border border-danger/40 bg-surface px-4 text-sm font-semibold text-danger hover:bg-danger-soft"
+              className="mt-3 h-10 rounded-full border border-danger/40 bg-surface px-5 text-sm font-semibold text-danger hover:bg-danger-soft"
             >
               Try again
             </button>
@@ -232,7 +239,7 @@ export default function Scout() {
         )}
 
         {phase === "idle" && (
-          <div className="mt-10 rounded-2xl border border-dashed border-line px-6 py-14 text-center">
+          <div className="mt-8 rounded-3xl border border-dashed border-line px-6 py-14 text-center">
             <p className="text-lg font-semibold">Ready when you are</p>
             <p className="mx-auto mt-2 max-w-md text-muted">
               Choose your categories and click <strong className="text-ink">Find partners</strong> to see this week&apos;s
@@ -244,46 +251,29 @@ export default function Scout() {
         {phase === "done" && data && (
           <section aria-label="Results" className="mt-8">
             {data.source === "stale" && (
-              <div role="alert" className="mb-4 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">
+              <div role="alert" className="mb-4 rounded-2xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">
                 <strong>ProductHunt is unreachable.</strong> Showing the last saved results from {timeAgo(data.generatedAt, new Date())}.
                 Days since launch may be out of date.
               </div>
             )}
             {data.aiStatus === "failed" && (
-              <div role="alert" className="mb-4 rounded-xl border border-urgent-line bg-urgent-soft px-4 py-3 text-sm text-urgent">
+              <div role="alert" className="mb-4 rounded-2xl border border-urgent-line bg-urgent-soft px-4 py-3 text-sm text-urgent">
                 <strong>AI drafts are unavailable right now.</strong> The ranked list is still correct. Click Find partners again in a
                 minute to get messages.
               </div>
             )}
             {otherWarnings.map((w) => (
-              <p key={w} className="mb-3 rounded-xl border border-urgent-line bg-urgent-soft px-4 py-2.5 text-sm text-urgent">
+              <p key={w} className="mb-3 rounded-2xl border border-urgent-line bg-urgent-soft px-4 py-2.5 text-sm text-urgent">
                 {w}
               </p>
             ))}
             {notice && (
-              <p role="alert" className="mb-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-2.5 text-sm text-danger">
+              <p role="alert" className="mb-3 rounded-2xl border border-danger/30 bg-danger-soft px-4 py-2.5 text-sm text-danger">
                 {notice}
               </p>
             )}
 
-            {/* At a glance */}
-            <dl className="grid grid-cols-3 gap-3">
-              <div className="rounded-2xl border border-line bg-surface px-4 py-3.5">
-                <dt className="text-xs text-muted">Launches</dt>
-                <dd className="mt-1 text-2xl font-semibold tabular-nums">{data.count}</dd>
-              </div>
-              <div className={`rounded-2xl border px-4 py-3.5 ${urgentCount > 0 ? "border-urgent-line bg-urgent-soft" : "border-line bg-surface"}`}>
-                <dt className={`text-xs ${urgentCount > 0 ? "text-urgent" : "text-muted"}`}>Closing soon (day 5+)</dt>
-                <dd className={`mt-1 text-2xl font-semibold tabular-nums ${urgentCount > 0 ? "text-urgent" : ""}`}>{urgentCount}</dd>
-              </div>
-              <div className="rounded-2xl border border-line bg-surface px-4 py-3.5">
-                <dt className="text-xs text-muted">Founder named</dt>
-                <dd className="mt-1 text-2xl font-semibold tabular-nums">
-                  {namedCount}
-                  <span className="text-base font-normal text-muted"> of {data.count}</span>
-                </dd>
-              </div>
-            </dl>
+            <StatCards launches={data.count} closing={urgentCount} named={namedCount} contacted={contactedCount} />
 
             {/* Toolbar */}
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
@@ -299,57 +289,66 @@ export default function Scout() {
                 )}
               </p>
               <div className="flex items-center gap-3">
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={urgentOnly}
-                    onChange={(e) => setUrgentOnly(e.target.checked)}
-                    className="h-4 w-4 accent-[var(--color-accent)]"
-                  />
-                  Closing soon only
-                </label>
+                {view === "scout" && (
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={urgentOnly}
+                      onChange={(e) => setUrgentOnly(e.target.checked)}
+                      className="h-4 w-4 accent-[var(--color-accent)]"
+                    />
+                    Closing soon only
+                  </label>
+                )}
                 <button
                   type="button"
                   onClick={downloadCsv}
                   disabled={rows.length === 0}
-                  className="h-10 rounded-lg border border-line bg-surface px-4 text-sm font-medium hover:bg-wash disabled:opacity-50"
+                  className="h-10 rounded-full border border-line bg-surface px-5 text-sm font-medium hover:bg-wash disabled:opacity-50"
                 >
                   Export CSV
                 </button>
               </div>
             </div>
 
-            {/* The list */}
-            {data.count === 0 ? (
-              <div className="mt-5 rounded-2xl border border-dashed border-line px-6 py-12 text-center">
-                <p className="font-semibold">No launches found</p>
-                <p className="mt-1 text-sm text-muted">Nothing in these categories from the last 7 days. Try adding more categories.</p>
-              </div>
-            ) : rows.length === 0 ? (
-              <div className="mt-5 rounded-2xl border border-dashed border-line px-6 py-12 text-center">
-                <p className="font-semibold">Nothing is closing soon</p>
-                <p className="mt-1 text-sm text-muted">No launch in this list is on day 5 or later. Untick &quot;Closing soon only&quot; to see all of them.</p>
-              </div>
-            ) : (
-              <div className="mt-5 space-y-4">
-                {rows.map((r, i) => (
-                  <ProductCard
-                    key={r.id}
-                    row={r}
-                    index={i}
-                    message={messages[r.id] ?? r.ai?.message ?? ""}
-                    onMessageChange={(id, text) => setMessages((m) => ({ ...m, [id]: text }))}
-                    onStatusChange={changeStatus}
-                  />
-                ))}
-              </div>
-            )}
+            <div className="mt-5">
+              {view === "pipeline" ? (
+                <PipelineBoard rows={all} onStatusChange={changeStatus} />
+              ) : data.count === 0 ? (
+                <div className="rounded-3xl border border-dashed border-line px-6 py-12 text-center">
+                  <p className="font-semibold">No launches found</p>
+                  <p className="mt-1 text-sm text-muted">Nothing in these categories from the last 7 days. Try adding more categories.</p>
+                </div>
+              ) : rows.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-line px-6 py-12 text-center">
+                  <p className="font-semibold">Nothing is closing soon</p>
+                  <p className="mt-1 text-sm text-muted">No launch in this list is on day 5 or later. Untick &quot;Closing soon only&quot; to see all of them.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {rows.map((r, i) => (
+                    <ProductCard
+                      key={r.id}
+                      row={r}
+                      index={i}
+                      message={messages[r.id] ?? r.ai?.message ?? ""}
+                      onMessageChange={(id, text) => setMessages((m) => ({ ...m, [id]: text }))}
+                      onStatusChange={changeStatus}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
 
             <p className="mt-6 text-xs leading-relaxed text-muted">
               Ranking: 60% upvotes + 40% maker replies + a small freshness bonus. Founder names come from public ProductHunt profiles; when a
               maker hides theirs we show a link instead of guessing.
             </p>
           </section>
+        )}
+
+        {phase !== "done" && view === "pipeline" && (
+          <p className="mt-6 text-center text-sm text-muted">Run a search first, then your pipeline appears here.</p>
         )}
       </main>
     </div>

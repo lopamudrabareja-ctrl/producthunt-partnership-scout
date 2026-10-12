@@ -2,23 +2,23 @@
 
 /* Design tokens: one warm-neutral system, one indigo accent, amber reserved for "window closing". */
 @theme {
-  --color-canvas: #fafaf9;
-  --color-surface: #ffffff;
-  --color-ink: #18181b;
-  --color-muted: #63636e; /* 5.9:1 on white: passes WCAG AA for body text */
-  --color-faint: #a1a1aa; /* decoration only, never for text */
-  --color-line: #e7e5e4;
-  --color-wash: #f5f5f4;
-  --color-accent: #4338ca;
-  --color-accent-strong: #3730a3;
-  --color-accent-soft: #eef2ff;
-  --color-urgent: #b45309;
-  --color-urgent-soft: #fffbeb;
-  --color-urgent-line: #fcd34d;
-  --color-ok: #047857;
-  --color-ok-soft: #ecfdf5;
-  --color-danger: #b91c1c;
-  --color-danger-soft: #fef2f2;
+  --color-canvas: #f3efe8;   /* warm cream */
+  --color-surface: #fffefb;  /* card white, slightly warm */
+  --color-ink: #1d2a23;      /* deep green-black */
+  --color-muted: #5b675e;    /* 5.4:1 on cream, higher on cards: passes WCAG AA */
+  --color-faint: #a9b0a6;    /* decoration only, never for text */
+  --color-line: #e6e0d4;
+  --color-wash: #f6f2ea;
+  --color-accent: #2f6f55;   /* sage green */
+  --color-accent-strong: #245a45;
+  --color-accent-soft: #e5efe9;
+  --color-urgent: #a8481f;   /* terracotta: reserved for "window closing" */
+  --color-urgent-soft: #fbeee6;
+  --color-urgent-line: #efc3a6;
+  --color-ok: #2f6f55;
+  --color-ok-soft: #e5efe9;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
 }
 
 @theme inline {
