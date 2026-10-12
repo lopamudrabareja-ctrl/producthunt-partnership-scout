@@ -127,6 +127,16 @@ describe("modelsToTry", () => {
     vi.stubEnv("GEMINI_FALLBACK_MODEL", "b");
     expect(modelsToTry()).toEqual(["a", "b"]);
   });
+  it("accepts a comma-separated fallback list and keeps its order", () => {
+    vi.stubEnv("GEMINI_MODEL", "a");
+    vi.stubEnv("GEMINI_FALLBACK_MODEL", "b, c ,d");
+    expect(modelsToTry()).toEqual(["a", "b", "c", "d"]);
+  });
+  it("has two built-in fallbacks when none is configured", () => {
+    vi.stubEnv("GEMINI_MODEL", "a");
+    vi.stubEnv("GEMINI_FALLBACK_MODEL", "");
+    expect(modelsToTry()).toEqual(["a", "gemini-3.6-flash", "gemini-3.5-flash-lite"]);
+  });
   it("does not list the same model twice", () => {
     vi.stubEnv("GEMINI_MODEL", "a");
     vi.stubEnv("GEMINI_FALLBACK_MODEL", "a");

@@ -5,7 +5,7 @@ import { AI_TOP_N } from "./config";
 import { PROFILE } from "./profile";
 import type { RankedProduct } from "./pipeline";
 
-export const GEMINI_TIMEOUT_MS = 30_000; // per model; two models = at most 60s
+export const GEMINI_TIMEOUT_MS = 20_000; // per model; three models = at most 60s, inside the route's 90s limit
 export { AI_TOP_N }; // only the top 10 go to Gemini: cheaper, faster, fewer rate-limit problems
 
 export type Draft = { oneLiner: string; angle: string; message: string };
@@ -82,8 +82,12 @@ export class GeminiError extends Error {}
 // so if the first one times out or is busy we fall back to the next. Model ids live in env vars.
 export function modelsToTry(): string[] {
   const primary = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
-  const fallback = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash";
-  return [...new Set([primary, fallback])];
+  // GEMINI_FALLBACK_MODEL may hold one id or a comma-separated list, tried in order after the primary.
+  const fallbacks = (process.env.GEMINI_FALLBACK_MODEL || "gemini-3.6-flash,gemini-3.5-flash-lite")
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
+  return [...new Set([primary, ...fallbacks])];
 }
 
 // One attempt on one model. Returns the text, or throws GeminiError(retryable) so the caller can try the next model.
