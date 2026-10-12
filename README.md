@@ -95,7 +95,7 @@ The five parts of an app:
 | One ProductHunt topic fails | The others still return, with a warning |
 | ProductHunt is down | Shows the last saved run, flagged as stale |
 | ProductHunt is down and nothing is saved | Clear error with a Try again button |
-| Gemini slow, overloaded or rate limited | Falls back to a second model; if that fails too, the ranked list still shows, with a notice |
+| Gemini slow, overloaded or rate limited | Tries up to three Gemini models in turn; if all fail, the ranked list still shows, with a notice |
 | Database missing or failing | The app still works, without cache or saved status |
 | Empty results, or no urgent launches | Dedicated empty states |
 | Cron called without the secret | 401, nothing runs |
@@ -127,7 +127,7 @@ Gemini receives only public ProductHunt fields (name, tagline, topics, days sinc
 npm install
 cp .env.example .env.local   # then fill in your own values
 npm run dev                  # http://localhost:3000   (add ?run=1 to start a search automatically)
-npm test                     # 61 unit tests
+npm test                     # 82 unit tests
 npm run ph-check             # prints which ProductHunt fields are real, empty or redacted
 ```
 
@@ -139,6 +139,6 @@ Create the database tables by running [supabase/schema.sql](supabase/schema.sql)
 
 - Founder names are often unavailable because ProductHunt hides them.
 - `makerReplies` counts replies, not their quality.
-- A fresh run takes about 8 to 20 seconds (mostly Gemini); a repeat within 10 minutes is instant.
+- A fresh run takes about 10 to 40 seconds (mostly Gemini, and Google's models are sometimes slow or overloaded); a repeat within 10 minutes is instant, and the page opens with the latest saved results.
 - The Copy button and CSV download were checked by fallback behaviour and unit tests, not by every browser.
 - Impact numbers (time saved) are targets from the case brief, not measured results.

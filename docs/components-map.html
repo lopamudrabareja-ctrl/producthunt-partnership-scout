@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -68,14 +68,14 @@
     <div class="a">Kavya (User)<small>Partnerships lead; owns every message</small></div>
     <div class="c"><div class="box human" id="U1"><b>Clicks "Find partners"</b>Picks category chips: project mgmt, HR tech, dev productivity, team comms</div></div>
     <div class="c"></div><div class="c"></div><div class="c"></div><div class="c"></div>
-    <div class="c"><div class="box human" id="U2"><span class="badge">HUMAN GATE</span><b>Reviews ranked list</b>Edits the draft, copies it or exports CSV, sends it herself. Sets status (new / contacted / replied / skip) in the list or on the Pipeline board</div></div>
+    <div class="c"><div class="box human" id="U2"><span class="badge">HUMAN GATE</span><b>Reviews ranked list</b>Spots NEW / Rising tags, uses LinkedIn / X search links if the founder is hidden, edits the draft, copies it or exports CSV, sends it herself. Sets status in the list or on the Pipeline board</div></div>
 
     <!-- Row 2: Backend -->
     <div class="a">System: App Backend<small>Next.js API route /api/scout (server only, keys never reach browser)</small></div>
     <div class="c"><div class="box sys" id="C0"><b>Vercel Cron, daily</b>03:00 UTC calls /api/cron (needs CRON_SECRET). Runs the same flow with refresh, saves the result</div></div>
     <div class="c"><div class="box sys" id="B1"><b>Request received</b>Categories chosen by Kavya</div></div>
     <div class="c"><div class="box sys" id="B2"><b>Fixed context</b>Kavya's product profile (lib/profile.ts) and scoring weights (config)</div></div>
-    <div class="c"><div class="box sys" id="B3"><b>Deterministic ranking (no AI)</b>Normalise, dedupe across topics, daysSinceLaunch, treat [REDACTED] as missing founder, score = 0.6 votes + 0.4 makerReplies + freshness, rank, zod check</div></div>
+    <div class="c"><div class="box sys" id="B3"><b>Deterministic ranking (no AI)</b>Normalise, dedupe across topics, daysSinceLaunch, treat [REDACTED] as missing founder, score = 0.6 votes + 0.4 makerReplies + freshness, rank, compare with the previous run (NEW / Rising), zod check</div></div>
     <div class="c"></div>
     <div class="c"><div class="box sys" id="B4"><b>Ranked outreach list</b>Name, founder (or "see PH profile"), one-liner, upvotes, days since launch, angle, message, urgency flag (day 5 to 7)</div></div>
 
@@ -91,7 +91,7 @@
     <div class="c"></div>
     <div class="c"><div class="box ai" id="G1"><b>Top ~10 only</b>Their PH fields plus Kavya's product profile</div></div>
     <div class="c"></div><div class="c"></div>
-    <div class="c"><div class="box ai" id="G2"><b>ONE batched call</b>Strict JSON output, validated with zod. On timeout, 429 or 5xx: try a fallback model, then skip AI text</div></div>
+    <div class="c"><div class="box ai" id="G2"><b>ONE batched call</b>Strict JSON output, validated with zod. On timeout, 429 or 5xx: try up to 3 models in turn, then skip AI text</div></div>
     <div class="c"><div class="box ai" id="G3"><b>Drafts</b>{ id, oneLiner, angle, message body } per product. The app adds the greeting and sign-off, so a founder name is never invented</div></div>
 
     <!-- Row 5: Database -->
@@ -118,7 +118,7 @@
     <li>Backend checks the database for a cached run under 10 minutes old.</li>
     <li>Cache miss: backend sends a GraphQL query to ProductHunt.</li>
     <li>ProductHunt returns live posts and makers from the last 7 days.</li>
-    <li>Backend combines that data with Kavya's profile and the scoring weights, then scores and ranks in plain code (same input, same order).</li>
+    <li>Backend combines that data with Kavya's profile and the scoring weights, then scores and ranks in plain code (same input, same order), and compares with the previous saved run to tag products as NEW or Rising.</li>
     <li>Only the top ~10 products go to Gemini, with Kavya's profile as context.</li>
     <li>Gemini Flash handles them in ONE batched call.</li>
     <li>Gemini returns strict JSON drafts (one-liner, angle, message).</li>
