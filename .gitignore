@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# stray screenshots (not part of the project)
+/Screenshot*.png
+/components-map-screenshot.png
