@@ -56,6 +56,7 @@ Her daily ProductHunt scroll is the "finding" slice of that job: a small, repeti
 | CRM sync | CSV export only |
 
 ## 6. Recommended additions, in priority order
+_Status 12 Oct 2026: items 1 and 2 are built and live. Items 3 to 6 are not built._
 1. **New and rising since your last check.** Compare each run with the previous saved one: tag brand-new launches and show upvote change ("+52 since this morning"). Answers the brief's two stated misses directly.
 2. **Reach-out links when the founder is hidden.** Prefilled LinkedIn and X search links built from the product name. No scraping and no invented names.
 3. **"Why this rank?"** A small breakdown of the score on each card. Strengthens "reliable outputs".

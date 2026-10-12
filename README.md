@@ -16,7 +16,7 @@ Every morning Kavya used to scroll ProductHunt for 30 to 40 minutes to find newl
 **How to use it (4 steps):**
 1. Pick one or more categories (project management, HR tech, developer productivity, team communication) and click **Find partners**.
 2. Read the ranked table. Each row shows the product, its founder, a one-line description, upvotes, how many days ago it launched, and a suggested angle for a partnership. Launches on day 5 or later carry an **Urgent** badge because the 7-day outreach window is closing.
-3. Click **Review message** on any of the top 10 to read, edit and copy a ready-made first message. The app never sends anything; Kavya sends it herself.
+3. Look for the **NEW** and **↑ Rising** tags and the green "+52 since 6 hr ago": they show what changed since your previous complete search. When a founder is hidden, use the **LinkedIn search / X search / Product site** links under each card. Then click **Review message** on any of the top 10 to read, edit and copy a ready-made first message. The app never sends anything; Kavya sends it herself.
 4. Set each product's status (New, Contacted, Replied, Skip). It is saved, so it is still there after a reload. **Export CSV** gives the list to her team.
 
 **What the app decides, and what it leaves to a person:** the app finds, ranks and drafts. A person decides whom to contact, edits the wording and sends it.
@@ -99,6 +99,8 @@ The five parts of an app:
 | Database missing or failing | The app still works, without cache or saved status |
 | Empty results, or no urgent launches | Dedicated empty states |
 | Cron called without the secret | 401, nothing runs |
+| First ever search (nothing to compare with) | No NEW or Rising tags, and a note says to search again later |
+| Three Gemini models all fail | List still shows, with a notice; a run without drafts is never saved |
 | CSV export | Cells starting with `=`, `+`, `-` or `@` are neutralised (CSV injection) |
 
 ## 6. ProductHunt API facts (tested, not assumed)
