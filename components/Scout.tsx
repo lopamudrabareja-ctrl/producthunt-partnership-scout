@@ -28,14 +28,35 @@ export default function Scout() {
     return () => clearInterval(timer);
   }, [phase]);
 
-  // Opening the page with ?run=1 starts the search straight away (handy for demos and bookmarks).
+  // On first load: ?run=1 starts a live search (handy for demos). Otherwise show the latest saved results,
+  // which the daily cron run keeps fresh, so Kavya sees data straight away without waiting.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("run") === "1") void run(false);
+    if (new URLSearchParams(window.location.search).get("run") === "1") {
+      void run(false);
+      return;
+    }
+    const controller = new AbortController();
+    fetch(`/api/scout?categories=${ALL_CATEGORY_IDS.join(",")}&saved=1`, { signal: controller.signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => json && showResponse(json as ScoutResponse))
+      .catch(() => {}); // no saved results yet (or offline): stay on the idle screen
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function toggle(id: CategoryId) {
     setSelected((cur) => (cur.includes(id) ? cur.filter((c) => c !== id) : [...cur, id]));
+  }
+
+  // Show a response: store it and seed the editable message boxes (keeping any edits Kavya already made).
+  function showResponse(resp: ScoutResponse) {
+    setData(resp);
+    setMessages((cur) => {
+      const next = { ...cur };
+      for (const r of resp.results) if (r.ai && next[r.id] === undefined) next[r.id] = r.ai.message;
+      return next;
+    });
+    setPhase("done");
   }
 
   async function run(refresh: boolean) {
@@ -52,15 +73,7 @@ export default function Scout() {
       const res = await fetch(`/api/scout?${qs}`, { signal: controller.signal });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? `Request failed (HTTP ${res.status})`);
-      const resp = json as ScoutResponse;
-      setData(resp);
-      // Seed the editable message box from each AI draft (keep edits Kavya already made).
-      setMessages((cur) => {
-        const next = { ...cur };
-        for (const r of resp.results) if (r.ai && next[r.id] === undefined) next[r.id] = r.ai.message;
-        return next;
-      });
-      setPhase("done");
+      showResponse(json as ScoutResponse);
     } catch (e) {
       if (controller.signal.aborted) return;
       setError(e instanceof Error ? e.message : "Something went wrong");

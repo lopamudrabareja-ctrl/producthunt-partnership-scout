@@ -57,6 +57,8 @@ Every morning Kavya used to scroll ProductHunt for 30 to 40 minutes to find newl
 ## 4. How it works
 
 ```
+Once a day: Vercel Cron -> /api/cron (secret-protected) -> same flow with refresh, result saved
+Kavya opens the page -> latest saved result shown instantly
 Kavya clicks "Find partners"
   -> /api/scout (server only; keys never reach the browser)
      1. Cache check in Supabase (same categories, under 10 minutes old -> reuse)
@@ -81,6 +83,8 @@ The five parts of an app:
 | Database | Supabase: `scout_runs` (cache), `launches` (history), `outreach_status` (pipeline) |
 | Version control | GitHub, deployed on Vercel |
 
+**Scheduled refresh (Vercel Cron):** `vercel.json` schedules `/api/cron` daily at 03:00 UTC (about 8:30 in India; the free Hobby plan allows one run a day and may drift by up to an hour). The route runs the same scout with a refresh and saves it, so the data stays live without anyone clicking, and the page shows the latest saved result on first load. `/api/cron` refuses any call that does not carry `CRON_SECRET`; if the secret is not set, nobody is allowed.
+
 ## 5. Reliability and edge cases
 
 | Situation | Behaviour |
@@ -93,6 +97,7 @@ The five parts of an app:
 | Gemini slow, overloaded or rate limited | Falls back to a second model; if that fails too, the ranked list still shows, with a notice |
 | Database missing or failing | The app still works, without cache or saved status |
 | Empty results, or no urgent launches | Dedicated empty states |
+| Cron called without the secret | 401, nothing runs |
 | CSV export | Cells starting with `=`, `+`, `-` or `@` are neutralised (CSV injection) |
 
 ## 6. ProductHunt API facts (tested, not assumed)
@@ -123,7 +128,7 @@ npm test                     # 61 unit tests
 npm run ph-check             # prints which ProductHunt fields are real, empty or redacted
 ```
 
-Environment variables (see `.env.example`): `PRODUCTHUNT_TOKEN`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL` (optional), `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+Environment variables (see `.env.example`): `PRODUCTHUNT_TOKEN`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL` (optional), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `CRON_SECRET` (for the daily scheduled run).
 
 Create the database tables by running [supabase/schema.sql](supabase/schema.sql) once in the Supabase SQL editor.
 

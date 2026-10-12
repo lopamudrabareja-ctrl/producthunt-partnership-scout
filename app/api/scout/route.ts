@@ -1,6 +1,7 @@
 // GET /api/scout?categories=hr-tech,project-management   (no param = all four categories)
 // Order follows the Components Map: cache check -> ProductHunt -> rank (no AI) -> Gemini (top 10) -> save -> return.
 //   &refresh=1  skip the cache and fetch live       &ai=0  skip Gemini (fast, uses no quota, never cached)
+//   &saved=1    return the latest saved run of ANY age without fetching (used on first page load; the daily cron keeps it fresh)
 import type { NextRequest } from "next/server";
 import { ALL_CATEGORY_IDS, CATEGORIES, MAX_RESULTS, type CategoryId } from "@/lib/config";
 import { cacheKey, dbConfigured, getLatestRun, getStatuses, isFresh, saveRun, type ScoutRow } from "@/lib/db";
@@ -48,6 +49,12 @@ export async function GET(request: NextRequest) {
 
   // 1. Cache check: a saved run under 10 minutes old for the same categories is reused.
   const latest = await getLatestRun(key);
+
+  // Saved-results mode: show the most recent run (e.g. this morning's cron run) without touching ProductHunt or Gemini.
+  if (params.get("saved") === "1") {
+    if (!latest) return Response.json({ error: "No saved results yet" }, { status: 404 });
+    return respond(latest.results, "cache", "ok", latest.createdAt);
+  }
   if (latest && wantAi && params.get("refresh") !== "1" && isFresh(latest.createdAt, now)) {
     return respond(latest.results, "cache", "ok", latest.createdAt);
   }
