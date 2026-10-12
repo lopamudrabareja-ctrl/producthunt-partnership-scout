@@ -2,7 +2,8 @@
 
 An AI-assisted tool that finds tools launched on ProductHunt in the last 7 days, ranks them, and drafts a first-contact message for each founder. The user reviews, edits and sends every message herself.
 
-- **Live app:** _add the Vercel URL here after deploying_
+- **Live app:** https://producthunt-partnership-scout.vercel.app
+- **GitHub repo:** https://github.com/lopamudrabareja-ctrl/producthunt-partnership-scout
 - **Components Map:** [docs/components-map.html](docs/components-map.html) (image: [docs/components-map.png](docs/components-map.png))
 - **Built for:** Mesa School of Business, Cohort C4, AI and its Applications, Term 1 Final Evaluation (Problem: ProductHunt Partnership Scout, Medium)
 
