@@ -1,12 +1,12 @@
 "use client";
-// The whole page: category chips -> "Find partners" -> ranked table with loading / empty / error states.
+// The whole page: category chips -> "Find partners" -> ranked cards with loading / empty / error states.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ALL_CATEGORY_IDS, CATEGORIES, type CategoryId } from "@/lib/config";
 import { toCsv } from "@/lib/csv";
 import type { Status } from "@/lib/status";
 import { timeAgo } from "@/lib/format";
 import type { ResultRow as Row, ScoutResponse } from "@/lib/types";
-import ResultRow from "./ResultRow";
+import ProductCard from "./ProductCard";
 
 type Phase = "idle" | "loading" | "done" | "error";
 
@@ -118,176 +118,240 @@ export default function Scout() {
   }
 
   const loadingStep =
-    seconds < 4 ? "Fetching launches from ProductHunt and ranking them" : "Writing outreach drafts with Gemini (the slow part)";
+    seconds < 4 ? "Fetching this week's launches from ProductHunt" : "Writing outreach drafts with Gemini";
+
+  const all = data?.results ?? [];
+  const urgentCount = all.filter((r) => r.urgent).length;
+  const namedCount = all.filter((r) => r.founder).length;
+  const otherWarnings = (data?.warnings ?? []).filter(
+    (w) => !w.startsWith("AI drafts unavailable") && !w.startsWith("ProductHunt is unreachable")
+  );
 
   return (
-    <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">ProductHunt Partnership Scout</h1>
-        <p className="mt-2 max-w-3xl text-zinc-600 dark:text-zinc-400">
-          Newly launched tools from the last 7 days, ranked by upvotes and how often the makers reply, with a draft
-          message for each. You review, edit and send. Nothing is ever sent for you.
-        </p>
+    <div className="flex min-h-full flex-1 flex-col">
+      {/* Top bar */}
+      <header className="border-b border-line bg-surface">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-sm font-bold text-white" aria-hidden>
+              PS
+            </span>
+            <span className="font-semibold tracking-tight">Partnership Scout</span>
+          </div>
+          <span className="hidden text-sm text-muted sm:block">Live ProductHunt data · last 7 days</span>
+        </div>
       </header>
 
-      <section aria-label="Choose categories" className="mt-6 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-        <p className="text-sm font-medium">Categories</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {ALL_CATEGORY_IDS.map((id) => {
-            const on = selected.includes(id);
-            return (
-              <button
-                key={id}
-                type="button"
-                aria-pressed={on}
-                onClick={() => toggle(id)}
-                className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                  on
-                    ? "border-indigo-600 bg-indigo-600 text-white"
-                    : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
-                }`}
-              >
-                {CATEGORIES[id].label}
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => run(false)}
-            disabled={phase === "loading" || selected.length === 0}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {phase === "loading" ? "Working…" : "Find partners"}
-          </button>
-          {selected.length === 0 && <span className="text-sm text-amber-700 dark:text-amber-300">Pick at least one category.</span>}
-        </div>
-      </section>
-
-      {phase === "loading" && (
-        <div role="status" className="mt-6 rounded-xl border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-900 dark:bg-indigo-950/40">
-          <div className="flex items-center gap-3">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" aria-hidden />
-            <p className="font-medium">{loadingStep}… {seconds}s</p>
-          </div>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            A fresh run takes about 20 seconds. A repeat search within 10 minutes is instant.
-          </p>
-        </div>
-      )}
-
-      {phase === "error" && (
-        <div role="alert" className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5 dark:border-red-900 dark:bg-red-950/40">
-          <p className="font-semibold text-red-800 dark:text-red-200">Could not load launches</p>
-          <p className="mt-1 text-sm text-red-700 dark:text-red-300">{error}</p>
-          <button type="button" onClick={() => run(false)} className="mt-3 rounded-md border border-red-300 px-3 py-1.5 text-sm font-medium hover:bg-red-100 dark:border-red-800 dark:hover:bg-red-900/40">
-            Try again
-          </button>
-        </div>
-      )}
-
-      {phase === "idle" && (
-        <p className="mt-10 text-center text-zinc-500">
-          Pick your categories and click <strong>Find partners</strong> to see this week&apos;s launches.
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6 sm:py-10">
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">ProductHunt Partnership Scout</h1>
+        <p className="mt-3 max-w-2xl text-[17px] leading-relaxed text-muted">
+          New tools from the last 7 days, ranked by upvotes and maker replies, each with a draft message. You review,
+          edit and send. Nothing is ever sent for you.
         </p>
-      )}
 
-      {phase === "done" && data && (
-        <section aria-label="Results" className="mt-6">
-          {data.source === "stale" && (
-            <div role="alert" className="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
-              <strong>ProductHunt is unreachable.</strong> Showing the last saved results from {timeAgo(data.generatedAt, new Date())}. Days
-              since launch may be out of date.
+        {/* Controls */}
+        <section aria-label="Choose categories" className="mt-8 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+          <p className="text-sm font-medium">Categories to search</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {ALL_CATEGORY_IDS.map((id) => {
+              const on = selected.includes(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggle(id)}
+                  className={`flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors ${
+                    on
+                      ? "border-accent bg-accent-soft text-accent-strong"
+                      : "border-line bg-surface text-muted hover:border-faint hover:text-ink"
+                  }`}
+                >
+                  <span
+                    className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${
+                      on ? "bg-accent text-white" : "border border-faint"
+                    }`}
+                    aria-hidden
+                  >
+                    {on ? "✓" : ""}
+                  </span>
+                  {CATEGORIES[id].label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={() => run(false)}
+              disabled={phase === "loading" || selected.length === 0}
+              className="h-11 rounded-xl bg-accent px-6 text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {phase === "loading" ? "Searching…" : "Find partners"}
+            </button>
+            {selected.length === 0 && <span className="text-sm text-urgent">Pick at least one category.</span>}
+          </div>
+        </section>
+
+        {/* Loading: skeleton cards, so the layout is already there while Gemini writes */}
+        {phase === "loading" && (
+          <section aria-label="Loading results" className="mt-8">
+            <div role="status" className="mb-4 flex items-center gap-3 rounded-xl border border-accent/20 bg-accent-soft px-4 py-3">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" aria-hidden />
+              <p className="text-sm font-medium text-accent-strong">
+                {loadingStep}… {seconds}s
+              </p>
+              <p className="ml-auto hidden text-sm text-muted sm:block">A fresh search takes 10 to 25 seconds</p>
             </div>
-          )}
-          {data.aiStatus === "failed" && (
-            <div role="alert" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-              <strong>AI drafts are unavailable right now.</strong> The ranked list below is still correct; click Find partners again in a minute to get messages.
+            <div className="space-y-4" aria-hidden>
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="animate-pulse rounded-2xl border border-line bg-surface p-6">
+                  <div className="h-5 w-1/3 rounded bg-wash" />
+                  <div className="mt-3 h-4 w-2/3 rounded bg-wash" />
+                  <div className="mt-6 h-px bg-line" />
+                  <div className="mt-4 h-4 w-1/2 rounded bg-wash" />
+                  <div className="mt-4 h-16 rounded-xl bg-wash" />
+                </div>
+              ))}
             </div>
-          )}
-          {data.warnings
-            .filter((w) => !w.startsWith("AI drafts unavailable") && !w.startsWith("ProductHunt is unreachable"))
-            .map((w) => (
-              <p key={w} className="mb-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          </section>
+        )}
+
+        {phase === "error" && (
+          <div role="alert" className="mt-8 rounded-2xl border border-danger/30 bg-danger-soft p-5">
+            <p className="font-semibold text-danger">Could not load launches</p>
+            <p className="mt-1 text-sm text-danger/90">{error}</p>
+            <button
+              type="button"
+              onClick={() => run(false)}
+              className="mt-3 h-10 rounded-lg border border-danger/40 bg-surface px-4 text-sm font-semibold text-danger hover:bg-danger-soft"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {phase === "idle" && (
+          <div className="mt-10 rounded-2xl border border-dashed border-line px-6 py-14 text-center">
+            <p className="text-lg font-semibold">Ready when you are</p>
+            <p className="mx-auto mt-2 max-w-md text-muted">
+              Choose your categories and click <strong className="text-ink">Find partners</strong> to see this week&apos;s
+              launches, ranked.
+            </p>
+          </div>
+        )}
+
+        {phase === "done" && data && (
+          <section aria-label="Results" className="mt-8">
+            {data.source === "stale" && (
+              <div role="alert" className="mb-4 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">
+                <strong>ProductHunt is unreachable.</strong> Showing the last saved results from {timeAgo(data.generatedAt, new Date())}.
+                Days since launch may be out of date.
+              </div>
+            )}
+            {data.aiStatus === "failed" && (
+              <div role="alert" className="mb-4 rounded-xl border border-urgent-line bg-urgent-soft px-4 py-3 text-sm text-urgent">
+                <strong>AI drafts are unavailable right now.</strong> The ranked list is still correct. Click Find partners again in a
+                minute to get messages.
+              </div>
+            )}
+            {otherWarnings.map((w) => (
+              <p key={w} className="mb-3 rounded-xl border border-urgent-line bg-urgent-soft px-4 py-2.5 text-sm text-urgent">
                 {w}
               </p>
             ))}
-          {notice && <p role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">{notice}</p>}
+            {notice && (
+              <p role="alert" className="mb-3 rounded-xl border border-danger/30 bg-danger-soft px-4 py-2.5 text-sm text-danger">
+                {notice}
+              </p>
+            )}
 
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              {data.count} launches ·{" "}
-              {data.source === "live" ? "fetched just now" : `saved result from ${timeAgo(data.generatedAt, new Date())}`}
-              {data.source !== "stale" && (
-                <>
-                  {" · "}
-                  <button type="button" onClick={() => run(true)} className="font-medium text-indigo-700 hover:underline dark:text-indigo-300">
-                    Refresh from ProductHunt
-                  </button>
-                </>
-              )}
+            {/* At a glance */}
+            <dl className="grid grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-line bg-surface px-4 py-3.5">
+                <dt className="text-xs text-muted">Launches</dt>
+                <dd className="mt-1 text-2xl font-semibold tabular-nums">{data.count}</dd>
+              </div>
+              <div className={`rounded-2xl border px-4 py-3.5 ${urgentCount > 0 ? "border-urgent-line bg-urgent-soft" : "border-line bg-surface"}`}>
+                <dt className={`text-xs ${urgentCount > 0 ? "text-urgent" : "text-muted"}`}>Closing soon (day 5+)</dt>
+                <dd className={`mt-1 text-2xl font-semibold tabular-nums ${urgentCount > 0 ? "text-urgent" : ""}`}>{urgentCount}</dd>
+              </div>
+              <div className="rounded-2xl border border-line bg-surface px-4 py-3.5">
+                <dt className="text-xs text-muted">Founder named</dt>
+                <dd className="mt-1 text-2xl font-semibold tabular-nums">
+                  {namedCount}
+                  <span className="text-base font-normal text-muted"> of {data.count}</span>
+                </dd>
+              </div>
+            </dl>
+
+            {/* Toolbar */}
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted">
+                {data.source === "live" ? "Fetched just now" : `Saved result from ${timeAgo(data.generatedAt, new Date())}`}
+                {data.source !== "stale" && (
+                  <>
+                    {" · "}
+                    <button type="button" onClick={() => run(true)} className="font-medium text-accent hover:underline">
+                      Refresh from ProductHunt
+                    </button>
+                  </>
+                )}
+              </p>
+              <div className="flex items-center gap-3">
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={urgentOnly}
+                    onChange={(e) => setUrgentOnly(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--color-accent)]"
+                  />
+                  Closing soon only
+                </label>
+                <button
+                  type="button"
+                  onClick={downloadCsv}
+                  disabled={rows.length === 0}
+                  className="h-10 rounded-lg border border-line bg-surface px-4 text-sm font-medium hover:bg-wash disabled:opacity-50"
+                >
+                  Export CSV
+                </button>
+              </div>
+            </div>
+
+            {/* The list */}
+            {data.count === 0 ? (
+              <div className="mt-5 rounded-2xl border border-dashed border-line px-6 py-12 text-center">
+                <p className="font-semibold">No launches found</p>
+                <p className="mt-1 text-sm text-muted">Nothing in these categories from the last 7 days. Try adding more categories.</p>
+              </div>
+            ) : rows.length === 0 ? (
+              <div className="mt-5 rounded-2xl border border-dashed border-line px-6 py-12 text-center">
+                <p className="font-semibold">Nothing is closing soon</p>
+                <p className="mt-1 text-sm text-muted">No launch in this list is on day 5 or later. Untick &quot;Closing soon only&quot; to see all of them.</p>
+              </div>
+            ) : (
+              <div className="mt-5 space-y-4">
+                {rows.map((r, i) => (
+                  <ProductCard
+                    key={r.id}
+                    row={r}
+                    index={i}
+                    message={messages[r.id] ?? r.ai?.message ?? ""}
+                    onMessageChange={(id, text) => setMessages((m) => ({ ...m, [id]: text }))}
+                    onStatusChange={changeStatus}
+                  />
+                ))}
+              </div>
+            )}
+
+            <p className="mt-6 text-xs leading-relaxed text-muted">
+              Ranking: 60% upvotes + 40% maker replies + a small freshness bonus. Founder names come from public ProductHunt profiles; when a
+              maker hides theirs we show a link instead of guessing.
             </p>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={urgentOnly} onChange={(e) => setUrgentOnly(e.target.checked)} />
-                Urgent only (day 5+)
-              </label>
-              <button
-                type="button"
-                onClick={downloadCsv}
-                disabled={rows.length === 0}
-                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
-              >
-                Export CSV
-              </button>
-            </div>
-          </div>
-
-          {data.count === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700">
-              <p className="font-medium">No launches found</p>
-              <p className="mt-1 text-sm text-zinc-500">Nothing in these categories from the last 7 days. Try adding more categories.</p>
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-300 p-10 text-center dark:border-zinc-700">
-              <p className="font-medium">No urgent launches</p>
-              <p className="mt-1 text-sm text-zinc-500">Nothing in this list is on day 5 or later. Untick &quot;Urgent only&quot; to see everything.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-              <table className="w-full min-w-[1000px] text-left">
-                <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
-                  <tr>
-                    <th className="px-3 py-2">#</th>
-                    <th className="px-3 py-2">Product</th>
-                    <th className="px-3 py-2">Founder</th>
-                    <th className="px-3 py-2">Upvotes</th>
-                    <th className="px-3 py-2">Launched</th>
-                    <th className="px-3 py-2">Outreach angle</th>
-                    <th className="px-3 py-2">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r) => (
-                    <ResultRow
-                      key={r.id}
-                      row={r}
-                      message={messages[r.id] ?? r.ai?.message ?? ""}
-                      onMessageChange={(id, text) => setMessages((m) => ({ ...m, [id]: text }))}
-                      onStatusChange={changeStatus}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <p className="mt-3 text-xs text-zinc-500">
-            Ranking: 60% upvotes + 40% maker replies + a small freshness bonus. Founder names come from public ProductHunt profiles; when a
-            maker hides theirs, we show a link instead of guessing.
-          </p>
-        </section>
-      )}
-    </main>
+          </section>
+        )}
+      </main>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { csvCell, toCsv, CSV_HEADER } from "./csv";
-import { timeAgo } from "./format";
+import { daysLeft, filledSegments, timeAgo, windowLabel } from "./format";
 import type { ResultRow } from "./types";
 
 function row(over: Partial<ResultRow> = {}): ResultRow {
@@ -64,5 +64,26 @@ describe("timeAgo", () => {
   it("copes with garbage and future dates", () => {
     expect(timeAgo("nope", now)).toBe("unknown time");
     expect(timeAgo(ago(-100), now)).toBe("just now");
+  });
+});
+
+describe("launch window helpers", () => {
+  it("counts days left in the 7-day window", () => {
+    expect(daysLeft(0)).toBe(7);
+    expect(daysLeft(5)).toBe(2);
+    expect(daysLeft(7)).toBe(0);
+    expect(daysLeft(12)).toBe(0);
+    expect(daysLeft(-3)).toBe(7);
+  });
+  it("words the label sensibly", () => {
+    expect(windowLabel(2)).toBe("5 days left");
+    expect(windowLabel(6)).toBe("1 day left");
+    expect(windowLabel(7)).toBe("Window closes today");
+  });
+  it("fills as many segments as full days elapsed, so filled + days left = 7", () => {
+    expect(filledSegments(0)).toBe(0);
+    expect(filledSegments(5)).toBe(5);
+    expect(filledSegments(9)).toBe(7);
+    for (const d of [0, 1, 3, 5, 7]) expect(filledSegments(d) + daysLeft(d)).toBe(7);
   });
 });

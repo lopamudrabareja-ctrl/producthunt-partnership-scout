@@ -10,3 +10,21 @@ export function timeAgo(iso: string, now: Date): string {
   if (hr < 48) return `${hr} hr ago`;
   return `${Math.floor(hr / 24)} days ago`;
 }
+
+// The 7-day outreach window: how many days are left after `daysSinceLaunch` days.
+import { WINDOW_DAYS } from "./config";
+
+export function daysLeft(daysSinceLaunch: number): number {
+  return Math.max(0, WINDOW_DAYS - Math.max(0, daysSinceLaunch));
+}
+
+export function windowLabel(daysSinceLaunch: number): string {
+  const left = daysLeft(daysSinceLaunch);
+  if (left === 0) return "Window closes today";
+  return left === 1 ? "1 day left" : `${left} days left`;
+}
+
+// How many of the 7 meter segments are filled = full days elapsed, so filled + days left always equals 7.
+export function filledSegments(daysSinceLaunch: number): number {
+  return Math.min(WINDOW_DAYS, Math.max(0, daysSinceLaunch));
+}
